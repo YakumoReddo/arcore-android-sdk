@@ -25,6 +25,9 @@
 #include "arcore_c_api.h"
 #include "util.h"
 
+
+#include <opencv2/opencv.hpp>
+
 namespace hello_ar {
 
 // This class renders the passthrough camera image into the OpenGL frame.
@@ -46,6 +49,7 @@ class BackgroundRenderer {
 
   // Returns the generated texture name for the GL_TEXTURE_EXTERNAL_OES target.
   GLuint GetTextureId() const;
+    cv::Mat ReadCameraTextureToMat(int width, int height);
 
  private:
   static constexpr int kNumVertices = 4;

@@ -291,6 +291,7 @@ void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
                                ar_point_cloud);
     ArPointCloud_release(ar_point_cloud);
   }
+  DetectAndPlaceRobot();
 }
 
 bool HelloArApplication::IsDepthSupported() {
@@ -531,4 +532,59 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
 
   return glm::make_mat3(uvTransform);
 }
+
+
+// 每帧处理摄像头画面
+    void HelloArApplication::DetectAndPlaceRobot() {
+        // 读取摄像头纹理为OpenCV Mat
+        cv::Mat camera_img = background_renderer_.ReadCameraTextureToMat(width_, height_);
+        if (camera_img.empty()) return;
+
+        // 用 zxing-cpp 识别二维码
+        ZXing::ImageView imageView(camera_img.data, camera_img.cols, camera_img.rows, ZXing::ImageFormat::BGR);
+        auto result = ZXing::ReadBarcode(imageView, ZXing::BarcodeFormat::QR_CODE);
+
+        if (result.isValid()) {
+            // 获取二维码的中心点
+            auto points = result.position();
+            int center_x = 0, center_y = 0;
+            for (const auto& pt : points) {
+                center_x += pt.x;
+                center_y += pt.y;
+            }
+            center_x /= points.size();
+            center_y /= points.size();
+
+            // 屏幕坐标转为 ARCore 坐标，放置机器人 Anchor
+            PlaceRobotAtScreenPosition(center_x, center_y);
+        }
+    }
+
+// 新增：在屏幕指定位置放置 Anchor
+    void HelloArApplication::PlaceRobotAtScreenPosition(float x, float y) {
+        if (ar_frame_ != nullptr && ar_session_ != nullptr) {
+            ArHitResultList* hit_result_list = nullptr;
+            ArHitResultList_create(ar_session_, &hit_result_list);
+            ArFrame_hitTest(ar_session_, ar_frame_, x, y, hit_result_list);
+            int32_t hit_result_list_size = 0;
+            ArHitResultList_getSize(ar_session_, hit_result_list, &hit_result_list_size);
+            if (hit_result_list_size > 0) {
+                ArHitResult* ar_hit = nullptr;
+                ArHitResult_create(ar_session_, &ar_hit);
+                ArHitResultList_getItem(ar_session_, hit_result_list, 0, ar_hit);
+
+                ArAnchor* anchor = nullptr;
+                if (ArHitResult_acquireNewAnchor(ar_session_, ar_hit, &anchor) == AR_SUCCESS) {
+                    ColoredAnchor colored_anchor;
+                    colored_anchor.anchor = anchor;
+                    colored_anchor.trackable = nullptr;
+                    SetColor(255.0f, 0.0f, 0.0f, 255.0f, colored_anchor.color); // 红色机器人
+                    anchors_.push_back(colored_anchor);
+                }
+                ArHitResult_destroy(ar_hit);
+            }
+            ArHitResultList_destroy(hit_result_list);
+        }
+    }
+
 }  // namespace hello_ar

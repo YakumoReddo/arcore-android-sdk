@@ -36,6 +36,11 @@
 #include "texture.h"
 #include "util.h"
 
+#include <ReadBarcode.h>
+#include <BarcodeFormat.h>
+#include <TextUtfEncoding.h>
+#include <opencv2/opencv.hpp>
+
 namespace hello_ar {
 
 // HelloArApplication handles all application logics.
@@ -80,7 +85,8 @@ class HelloArApplication {
   bool IsDepthSupported();
 
   void OnSettingsChange(bool is_instant_placement_enabled);
-
+    void DetectAndPlaceRobot();
+    void PlaceRobotAtScreenPosition(float x, float y);
  private:
   glm::mat3 GetTextureTransformMatrix(const ArSession* session,
                                       const ArFrame* frame);

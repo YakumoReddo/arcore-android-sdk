@@ -173,4 +173,18 @@ void BackgroundRenderer::Draw(const ArSession* session, const ArFrame* frame,
 
 GLuint BackgroundRenderer::GetTextureId() const { return camera_texture_id_; }
 
+
+// 新增：将当前摄像头纹理拷贝为 OpenCV Mat
+    cv::Mat BackgroundRenderer::ReadCameraTextureToMat(int width, int height) {
+        cv::Mat img(height, width, CV_8UC4); // RGBA
+
+        glBindTexture(GL_TEXTURE_EXTERNAL_OES, camera_texture_id_);
+        glGetTexImage(GL_TEXTURE_EXTERNAL_OES, 0, GL_RGBA, GL_UNSIGNED_BYTE, img.data);
+
+        // 如果需要灰度或BGR，可以转换
+        cv::Mat bgr_img;
+        cv::cvtColor(img, bgr_img, cv::COLOR_RGBA2BGR);
+        return bgr_img;
+    }
 }  // namespace hello_ar
+
