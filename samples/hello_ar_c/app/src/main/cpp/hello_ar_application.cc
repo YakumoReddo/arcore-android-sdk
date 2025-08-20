@@ -110,6 +110,7 @@ void HelloArApplication::OnResume(JNIEnv* env, void* context, void* activity) {
 
   const ArStatus status = ArSession_resume(ar_session_);
   CHECKANDTHROW(status == AR_SUCCESS, env, "Failed to resume AR session.");
+    LOGI("屏幕尺寸: width = %d, height = %d", width_, height_);
 }
 
 void HelloArApplication::OnSurfaceCreated() {
@@ -277,6 +278,12 @@ void HelloArApplication::OnDrawFrame(bool depthColorVisualizationEnabled,
       // Render object only if the tracking state is AR_TRACKING_STATE_TRACKING.
       util::GetTransformMatrixFromAnchor(*colored_anchor.anchor, ar_session_,
                                          &model_mat);
+
+      // 添加缩放（这里以 0.3f 举例，实际可以自己调节）
+      float scale = 0.3f; // 缩放因子，越小越迷你
+      glm::mat4 scale_mat = glm::scale(glm::mat4(1.0f), glm::vec3(scale, scale, scale));
+      model_mat = model_mat * scale_mat;
+
       andy_renderer_.Draw(projection_mat, view_mat, model_mat, color_correction,
                           colored_anchor.color);
     }
@@ -534,12 +541,18 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
 }
 
 
+    static bool g_camera_img_size_logged = false;
 // 每帧处理摄像头画面
     void HelloArApplication::DetectAndPlaceRobot() {
         // 读取摄像头纹理为OpenCV Mat
         cv::Mat camera_img = background_renderer_.ReadCameraTextureToMat(width_, height_);
         if (camera_img.empty()) return;
 
+        // 只输出一次图片大小
+        if (!g_camera_img_size_logged) {
+            LOGI("摄像头图片尺寸: cols = %d, rows = %d", camera_img.cols, camera_img.rows);
+            g_camera_img_size_logged = true;
+        }
         // 用 zxing-cpp 识别二维码
         ZXing::ImageView imageView(camera_img.data, camera_img.cols, camera_img.rows, ZXing::ImageFormat::BGR);
         ZXing::ReaderOptions options;
@@ -549,7 +562,7 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
 
         if (result.isValid()) {
 
-            LOGI("qrcode dup: %s",result.text().c_str());
+            LOGI("qrcode: %s",result.text().c_str());
             // 检查二维码内容是否已生成机器人
             if (detected_qr_codes_.count(result.text())) {
                 // 已生成，跳过
@@ -566,9 +579,14 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
             center_x /= points.size();
             center_y /= points.size();
 
+            LOGI("二维码中心点: x = %d, y = %d", center_x, center_y);
+
+            float screen_x = center_x * width_ / camera_img.cols;
+            float screen_y = height_ - (center_y * height_ / camera_img.rows);
+
             // 屏幕坐标转为 ARCore 坐标，放置机器人 Anchor
             detected_qr_codes_.insert(result.text());
-            PlaceRobotAtScreenPosition(center_x, center_y);
+            PlaceRobotAtScreenPosition(screen_x, screen_y);
         }
     }
 
