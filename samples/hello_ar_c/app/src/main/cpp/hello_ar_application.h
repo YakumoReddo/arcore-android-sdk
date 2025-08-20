@@ -122,6 +122,7 @@ class HelloArApplication {
   void ConfigureSession();
 
   void UpdateAnchorColor(ColoredAnchor* colored_anchor);
+    std::set<std::string> detected_qr_codes_;
 };
 }  // namespace hello_ar
 

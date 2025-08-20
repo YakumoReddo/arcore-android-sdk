@@ -548,6 +548,14 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
         auto result = ZXing::ReadBarcode(imageView, options);
 
         if (result.isValid()) {
+
+            LOGI("qrcode dup: %s",result.text().c_str());
+            // 检查二维码内容是否已生成机器人
+            if (detected_qr_codes_.count(result.text())) {
+                // 已生成，跳过
+                return;
+            }
+            LOGI("qrcode dup");
             // 获取二维码的中心点
             auto points = result.position();
             int center_x = 0, center_y = 0;
@@ -559,6 +567,7 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
             center_y /= points.size();
 
             // 屏幕坐标转为 ARCore 坐标，放置机器人 Anchor
+            detected_qr_codes_.insert(result.text());
             PlaceRobotAtScreenPosition(center_x, center_y);
         }
     }
