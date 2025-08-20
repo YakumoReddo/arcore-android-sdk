@@ -542,7 +542,10 @@ glm::mat3 HelloArApplication::GetTextureTransformMatrix(
 
         // 用 zxing-cpp 识别二维码
         ZXing::ImageView imageView(camera_img.data, camera_img.cols, camera_img.rows, ZXing::ImageFormat::BGR);
-        auto result = ZXing::ReadBarcode(imageView, ZXing::BarcodeFormat::QR_CODE);
+        ZXing::ReaderOptions options;
+        options.setFormats(ZXing::BarcodeFormat::QRCode); // 这里只能用QRCode，不能用QR_CODE或QRCODE
+
+        auto result = ZXing::ReadBarcode(imageView, options);
 
         if (result.isValid()) {
             // 获取二维码的中心点

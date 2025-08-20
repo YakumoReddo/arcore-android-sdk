@@ -19,7 +19,8 @@
 # Sets the minimum version of CMake required to build the native library.
 
 cmake_minimum_required(VERSION 3.10)
-
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Import the ARCore (Google Play Services for AR) library.
 add_library(arcore SHARED IMPORTED)
 set_target_properties(arcore PROPERTIES IMPORTED_LOCATION
