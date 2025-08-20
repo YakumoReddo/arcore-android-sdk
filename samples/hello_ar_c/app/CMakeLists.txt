@@ -18,7 +18,7 @@
 
 # Sets the minimum version of CMake required to build the native library.
 
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.10)
 
 # Import the ARCore (Google Play Services for AR) library.
 add_library(arcore SHARED IMPORTED)
@@ -44,9 +44,24 @@ add_library(hello_ar_native SHARED
 
 target_include_directories(hello_ar_native PRIVATE
            src/main/cpp)
+
+
+include_directories(src/main/cpp/zxing-cpp/core/src)
+
+add_library(zxing STATIC IMPORTED)
+set_target_properties(zxing PROPERTIES IMPORTED_LOCATION
+        C:/Users/yanhuizhe/StudioProjects/yrarcore/samples/hello_ar_c/app/src/main/cpp/zxing-cpp/${ANDROID_ABI}/core/libZXing.a
+)
+
+set(OpenCV_DIR C:/Users/yanhuizhe/StudioProjects/yrarcore/samples/hello_ar_c/app/src/main/cpp/opencv-mobile-2.4.13.7-android/sdk/native/jni)
+find_package(OpenCV REQUIRED core imgproc)
+
+
 target_link_libraries(hello_ar_native
                       android
                       log
                       GLESv2
                       glm
+        ${OpenCV_LIBS}
+        zxing
                       arcore)
